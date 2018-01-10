@@ -8,7 +8,7 @@
 class p_processor : public processor
 {
 public:
-    virtual void process (std::istream &in, std::ostream &out) const;
+    virtual void process (std::wistream &in, std::wostream &out) const;
     virtual ~p_processor(){}
 };
 

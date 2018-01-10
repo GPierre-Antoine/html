@@ -1,7 +1,5 @@
-#include <ios>
 #include <fstream>
 #include <sstream>
-#include <algorithm>
 #include <experimental/filesystem>
 #include <memory>
 
@@ -10,7 +8,7 @@
 namespace fs = std::experimental::filesystem::v1;
 
 
-void use_processors(const std::vector<std::unique_ptr<processor>> & arguments, std::iostream & first, std::ostream & second)
+void use_processors(const std::vector<std::unique_ptr<processor>> & arguments, std::wiostream & first, std::wostream & second)
 {
     if (arguments.size() == 1)
     {
@@ -18,24 +16,21 @@ void use_processors(const std::vector<std::unique_ptr<processor>> & arguments, s
         return;
     }
 
-    //std::stringbuf buffer1; 
-    //std::stringbuf buffer2;
+    std::wstringstream buffer1,  buffer2,  *buffer_ptr1, *buffer_ptr2;
 
-    //std::stringbuf *buffer_ptr1, *buffer_ptr2;
+    buffer_ptr1 = &buffer1;
+    buffer_ptr2 = &buffer2;
 
-    //buffer_ptr1 = &buffer1;
-    //buffer_ptr2 = &buffer2;
-
-    //arguments[0]->process(first,buffer1);
+    arguments[0]->process(first,buffer1);
 
 
-    //for (std::size_t i=1; i < arguments.size()-1;++i)
-    //{
-    //    arguments[i]->process(*buffer_ptr1,*buffer_ptr2);
-    //    std::swap(buffer_ptr1,buffer_ptr2);
-    //}
+    for (std::size_t i=1; i < arguments.size()-1;++i)
+    {
+        arguments[i]->process(*buffer_ptr1,*buffer_ptr2);
+        std::swap(*buffer_ptr1,*buffer_ptr2);
+    }
 
-    //arguments[arguments.size()-1]->process(*buffer_ptr1,&second);
+    arguments[arguments.size()-1]->process(*buffer_ptr1,second);
 
 }
 
@@ -45,7 +40,7 @@ int main (int argc, char ** argv)
     try
     {
 
-        std::vector<std::stringstream> strings;
+        std::vector<std::wstringstream> strings;
         std::vector<std::unique_ptr<processor>> arguments;
         strings.reserve(argc);
         arguments.reserve(argc);
@@ -58,7 +53,7 @@ int main (int argc, char ** argv)
                 std::ifstream file(argv[argc_counter]);
                 if (file)
                 {
-                    strings.emplace_back(std::stringstream());
+                    strings.emplace_back(std::wstringstream());
                     strings[strings.size()-1] << file.rdbuf();
                     file.close();
                 }
@@ -71,8 +66,8 @@ int main (int argc, char ** argv)
         }
         if (!strings.size())
         {
-            strings.push_back(std::stringstream());
-            strings[strings.size()-1] << std::cin.rdbuf();
+            strings.push_back(std::wstringstream());
+            strings[strings.size()-1] << std::wcin.rdbuf();
         }
 
         if (!arguments.size())
@@ -82,7 +77,7 @@ int main (int argc, char ** argv)
 
         for (auto & stream : strings)
         {
-            use_processors(arguments,stream,std::cout);
+            use_processors(arguments,stream,std::wcout);
         }
 
        return EXIT_SUCCESS;

@@ -5,10 +5,9 @@ redo:
 	rm -f -- html
 
 
-html:
+html: 
 	g++ -std=c++17 *.{cpp,h} -lstdc++fs -fmax-errors=1 -o html
 
-
 clean: 
-	rm -rf *.gch
+	rm -rf *.gch target
 
