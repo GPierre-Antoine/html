@@ -4,11 +4,15 @@
 #include <memory>
 
 #include "processor_factory.h"
+#include "reverse_processor.h"
+#include "count_processor.h"
+#include "p_processor.h"
+
 
 namespace fs = std::experimental::filesystem::v1;
 
 
-void use_processors(const std::vector<std::unique_ptr<processor>> & arguments, std::wiostream & first, std::wostream & second)
+void use_processors(const std::vector<std::shared_ptr<processor>> & arguments, std::wiostream & first, std::wostream & second)
 {
     if (arguments.size() == 1)
     {
@@ -41,10 +45,15 @@ int main (int argc, char ** argv)
     {
 
         std::vector<std::wstringstream> strings;
-        std::vector<std::unique_ptr<processor>> arguments;
+        std::vector<std::shared_ptr<processor>> arguments;
         strings.reserve(argc);
         arguments.reserve(argc);
         processor_factory factory;
+
+        factory.load("p",std::make_shared<p_processor>(p_processor()));
+        factory.load("line",std::make_shared<count_processor>(count_processor()));
+        factory.load("reverse",std::make_shared<reverse_processor>(reverse_processor()));
+
 
         for (int argc_counter=1; argc_counter<argc; ++argc_counter)
         {
@@ -66,6 +75,11 @@ int main (int argc, char ** argv)
         }
         if (!strings.size())
         {
+            wchar_t checker = std::wcin.peek();
+            if (checker == EOF)
+            {
+                throw std::runtime_error("No file given");
+            }
             strings.push_back(std::wstringstream());
             strings[strings.size()-1] << std::wcin.rdbuf();
         }
@@ -84,7 +98,7 @@ int main (int argc, char ** argv)
     }
     catch (std::exception &e)
     {
-        std::cerr << e.what() << std::endl;
+        std::cerr << argv[0] << " : "  << e.what() << std::endl;
     }
 
     return EXIT_FAILURE;
