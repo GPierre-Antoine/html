@@ -1,5 +1,7 @@
-#include <iostream>
+#include <ios>
 #include <fstream>
+#include <sstream>
+#include <algorithm>
 #include <experimental/filesystem>
 #include <memory>
 
@@ -7,16 +9,45 @@
 
 namespace fs = std::experimental::filesystem::v1;
 
+
+void use_processors(const std::vector<std::unique_ptr<processor>> & arguments, std::iostream & first, std::ostream & second)
+{
+    if (arguments.size() == 1)
+    {
+        arguments[0]->process(first,second);
+        return;
+    }
+
+    //std::stringbuf buffer1; 
+    //std::stringbuf buffer2;
+
+    //std::stringbuf *buffer_ptr1, *buffer_ptr2;
+
+    //buffer_ptr1 = &buffer1;
+    //buffer_ptr2 = &buffer2;
+
+    //arguments[0]->process(first,buffer1);
+
+
+    //for (std::size_t i=1; i < arguments.size()-1;++i)
+    //{
+    //    arguments[i]->process(*buffer_ptr1,*buffer_ptr2);
+    //    std::swap(buffer_ptr1,buffer_ptr2);
+    //}
+
+    //arguments[arguments.size()-1]->process(*buffer_ptr1,&second);
+
+}
+
+
 int main (int argc, char ** argv)
 {
     try
     {
 
-        std::vector<std::shared_ptr<std::ios>> file_input;
-        std::stringbuf buffer1; 
-        std::stringbuf buffer2;
+        std::vector<std::stringstream> strings;
         std::vector<std::unique_ptr<processor>> arguments;
-        file_input.reserve(argc);
+        strings.reserve(argc);
         arguments.reserve(argc);
         processor_factory factory;
 
@@ -24,7 +55,13 @@ int main (int argc, char ** argv)
         {
             if (fs::is_regular_file(argv[argc_counter]))
             {
-                file_input.push_back(std::make_shared<std::ifstream>(argv[argc_counter]));
+                std::ifstream file(argv[argc_counter]);
+                if (file)
+                {
+                    strings.emplace_back(std::stringstream());
+                    strings[strings.size()-1] << file.rdbuf();
+                    file.close();
+                }
             }
             else
             {
@@ -32,9 +69,10 @@ int main (int argc, char ** argv)
             }
 
         }
-        if (!file_input.size())
+        if (!strings.size())
         {
-            file_input.push_back(std::shared_ptr<std::istream>(&std::cin,[](void*){}));
+            strings.push_back(std::stringstream());
+            strings[strings.size()-1] << std::cin.rdbuf();
         }
 
         if (!arguments.size())
@@ -42,31 +80,9 @@ int main (int argc, char ** argv)
             throw std::runtime_error("Missing processor");
         }
 
-        for (auto & stream : file_input)
+        for (auto & stream : strings)
         {
-
-            if (arguments.size() == 1)
-            {
-                arguments[0]->process(*stream,&std::cout);
-                continue;
-            }
-
-            std::stringbuf *buffer_ptr1, *buffer_ptr2;
-
-            buffer_ptr1 = &buffer1;
-            buffer_ptr2 = &buffer2;
-
-            arguments[0]->process(*stream,&buffer1);
-
-
-            for (std::size_t i=1; i < arguments.size()-1;++i)
-            {
-                arguments[i]->process(*buffer_ptr1,*buffer_ptr2);
-                std::swap(buffer_ptr1,buffer_ptr2);
-            }
-
-            arguments[arguments.size()-1]->process(*buffer_ptr1,&std::cout);
-
+            use_processors(arguments,stream,std::cout);
         }
 
        return EXIT_SUCCESS;
